@@ -11,6 +11,7 @@
     "@astrojs/node": "latest",
     "@astrojs/vercel": "^10.0.7",
     "@supabase/supabase-js": "latest",
+    "@vercel/routing-utils": "^6.2.0",
     "astro": "latest"
   }
 }
