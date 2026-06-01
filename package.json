@@ -12,6 +12,7 @@
     "@astrojs/vercel": "^10.0.7",
     "@supabase/supabase-js": "latest",
     "@vercel/routing-utils": "^6.2.0",
-    "astro": "latest"
+    "astro": "latest",
+    "html5-qrcode": "^2.3.8"
   }
 }

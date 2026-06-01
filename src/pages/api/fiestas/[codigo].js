@@ -35,7 +35,8 @@ export async function GET({ params, request }) {
     .maybeSingle();
 
   if (fiestaError) {
-    return jsonResponse({ ok: false, message: fiestaError.message }, 500);
+    console.error("Error consultando fiesta:", fiestaError);
+    return jsonResponse({ ok: false, message: "No se pudo consultar la fiesta" }, 500);
   }
 
   if (!fiesta) {
@@ -48,7 +49,8 @@ export async function GET({ params, request }) {
     .eq("fiesta_id", fiesta.id);
 
   if (mesasError) {
-    return jsonResponse({ ok: false, message: mesasError.message }, 500);
+    console.error("Error consultando mesas:", mesasError);
+    return jsonResponse({ ok: false, message: "No se pudieron consultar las mesas" }, 500);
   }
 
   const mesasOrdenadas = (mesas || [])
@@ -74,7 +76,8 @@ export async function GET({ params, request }) {
     .order("created_at", { ascending: true });
 
   if (invitadosError) {
-    return jsonResponse({ ok: false, message: invitadosError.message }, 500);
+    console.error("Error consultando invitados:", invitadosError);
+    return jsonResponse({ ok: false, message: "No se pudieron consultar los invitados" }, 500);
   }
 
   const mesaMap = new Map(mesasOrdenadas.map((mesa) => [mesa.id, mesa]));
@@ -95,7 +98,10 @@ export async function GET({ params, request }) {
   const totales = {
     registros: invitadosConMesa.length,
     personas: invitadosConMesa.reduce((suma, invitado) => suma + Number(invitado.cantidad_invitados || 0), 0),
-    asistencias: invitadosConMesa.filter((invitado) => invitado.asistio).length
+    asistencias: invitadosConMesa.reduce(
+      (suma, invitado) => invitado.asistio ? suma + Number(invitado.cantidad_invitados || 0) : suma,
+      0
+    )
   };
 
   return jsonResponse({

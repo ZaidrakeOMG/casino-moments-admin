@@ -32,11 +32,12 @@ export async function PATCH({ params, request }) {
     .maybeSingle();
 
   if (error) {
-    return jsonResponse({ ok: false, message: error.message }, 500);
+    console.error("Error actualizando asistencia:", error);
+    return jsonResponse({ ok: false, message: "No se pudo actualizar la asistencia" }, 500);
   }
 
   if (!data) {
-    return jsonResponse({ ok: false, message: "No se encontró el invitado o no hay permiso para actualizar la asistencia" }, 404);
+    return jsonResponse({ ok: false, message: "No se encontró el invitado" }, 404);
   }
 
   return jsonResponse({ ok: true, invitado: data });
