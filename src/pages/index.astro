@@ -23,8 +23,8 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
 
         <div class="access-copy">
           <span class="luxury-line"></span>
-          <h2>Acceso a lista de invitados</h2>
-          <p>Ingresa el PIN administrador y el ID de fiesta para abrir el control de recepción.</p>
+          <h2>Acceso privado</h2>
+          <p>Ingresa el PIN administrador y el ID de fiesta para abrir la lista.</p>
         </div>
 
         <div class="login-form">
@@ -35,7 +35,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
 
           <label>
             <span>ID de fiesta</span>
-            <input id="codigoFiesta" type="text" placeholder="Ej. CM-8F4K2" autocomplete="off" />
+            <input id="codigoFiesta" type="text" placeholder="Ej. CM-84QJRT" autocomplete="off" />
           </label>
 
           <button id="btnConsultar" class="primary-button" type="button">Entrar a la lista</button>
@@ -55,7 +55,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
           <div>
             <p class="eyebrow">Casino Moments</p>
             <h1>Lista de invitados</h1>
-            <p class="subtitle">Consulta, búsqueda y control de asistencia para recepción.</p>
+            <p class="subtitle"><strong id="resCodigo">-</strong> · <span id="tipoLista">-</span></p>
           </div>
         </div>
 
@@ -65,52 +65,17 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
         </div>
       </header>
 
-      <section class="event-strip">
-        <div>
-          <span>ID de fiesta</span>
-          <strong id="resCodigo">-</strong>
-        </div>
-        <div>
-          <span>Tipo</span>
-          <strong id="tipoLista">-</strong>
-        </div>
-      </section>
-
-      <div class="summary-grid">
-        <article class="metric">
-          <span>Registros</span>
-          <strong id="totalRegistros">0</strong>
-          <small>familias o responsables</small>
-        </article>
-        <article class="metric featured">
-          <span>Total personas</span>
-          <strong id="totalPersonas">0</strong>
-          <small>invitados registrados</small>
-        </article>
-        <article class="metric">
-          <span>Asistencia</span>
-          <strong id="totalAsistentes">0</strong>
-          <small>personas marcadas</small>
-        </article>
-        <article class="metric">
-          <span>Pendientes</span>
-          <strong id="totalPendientes">0</strong>
-          <small>por confirmar entrada</small>
-        </article>
-      </div>
-
-      <section class="scanner-card">
+      <section class="scanner-card scanner-compact">
         <div class="scanner-header">
           <div>
-            <p class="eyebrow">Escáner de acceso</p>
-            <h2>Escanear QR</h2>
-            <p>Apunta la cámara al QR del invitado para validar su acceso y marcar asistencia.</p>
+            <p class="eyebrow">Acceso QR</p>
+            <h2>Escanear invitado</h2>
+            <p>Presiona el icono para abrir cámara. Al escanear se cierra y muestra el pase.</p>
           </div>
 
-          <div class="scanner-actions">
-            <button id="btnIniciarScanner" class="primary-button" type="button">Abrir cámara</button>
-            <button id="btnDetenerScanner" class="ghost-button" type="button" disabled>Cerrar cámara</button>
-            <button id="btnVerLista" class="secondary-button" type="button">Ver lista</button>
+          <div class="scanner-actions top-icons">
+            <button id="btnIniciarScanner" class="qr-icon-button" type="button" title="Escanear QR" aria-label="Escanear QR">⛶</button>
+            <button id="btnDetenerScanner" class="qr-close-button" type="button" disabled title="Cerrar cámara" aria-label="Cerrar cámara">×</button>
           </div>
         </div>
 
@@ -121,7 +86,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
       <section id="toolsCard" class="tools-card hidden">
         <label>
           <span>Buscar invitado</span>
-          <input id="buscador" type="search" placeholder="Nombre, familia, teléfono o mesa" />
+          <input id="buscador" type="search" placeholder="Nombre, familia, teléfono, mesa o ID" />
         </label>
         <button id="btnExportar" class="secondary-button" type="button">Exportar CSV</button>
       </section>
@@ -129,18 +94,39 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
       <section id="dashboardEstado" class="state dashboard-state hidden"></section>
       <section id="listaContenedor" class="list-container hidden"></section>
     </section>
+
+    <section id="modalAcceso" class="access-modal hidden" aria-live="polite">
+      <article class="access-modal-card">
+        <div id="modalIcono" class="modal-icon">✓</div>
+        <p id="modalEstado" class="modal-status">ESTE INVITADO PUEDE PASAR</p>
+        <h2 id="modalNombre">Invitado</h2>
+
+        <div class="modal-grid">
+          <div class="modal-info">
+            <span>Mesa</span>
+            <strong id="modalMesa">-</strong>
+          </div>
+
+          <div class="modal-info">
+            <span>Personas</span>
+            <strong id="modalPersonas">-</strong>
+          </div>
+        </div>
+
+        <p id="modalDetalle" class="modal-detail">Este invitado puede pasar.</p>
+
+        <button id="btnCerrarModalAcceso" class="primary-button modal-button" type="button">
+          Continuar
+        </button>
+      </article>
+    </section>
   </main>
 
   <script>
-    import { Html5Qrcode } from "html5-qrcode";
-
+    // @ts-nocheck
     function obtenerElemento(selector) {
       const elemento = document.querySelector(selector);
-
-      if (!elemento) {
-        throw new Error(`No se encontró el elemento ${selector}`);
-      }
-
+      if (!elemento) throw new Error(`No se encontró el elemento ${selector}`);
       return elemento;
     }
 
@@ -154,10 +140,6 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
     const dashboardEstado = obtenerElemento("#dashboardEstado");
     const resultado = obtenerElemento("#resultado");
     const resCodigo = obtenerElemento("#resCodigo");
-    const totalRegistros = obtenerElemento("#totalRegistros");
-    const totalPersonas = obtenerElemento("#totalPersonas");
-    const totalAsistentes = obtenerElemento("#totalAsistentes");
-    const totalPendientes = obtenerElemento("#totalPendientes");
     const tipoLista = obtenerElemento("#tipoLista");
     const buscador = obtenerElemento("#buscador");
     const btnExportar = obtenerElemento("#btnExportar");
@@ -165,37 +147,35 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
     const toolsCard = obtenerElemento("#toolsCard");
     const btnIniciarScanner = obtenerElemento("#btnIniciarScanner");
     const btnDetenerScanner = obtenerElemento("#btnDetenerScanner");
-    const btnVerLista = obtenerElemento("#btnVerLista");
     const qrResultado = obtenerElemento("#qrResultado");
+    const modalAcceso = obtenerElemento("#modalAcceso");
+    const modalIcono = obtenerElemento("#modalIcono");
+    const modalEstado = obtenerElemento("#modalEstado");
+    const modalNombre = obtenerElemento("#modalNombre");
+    const modalMesa = obtenerElemento("#modalMesa");
+    const modalPersonas = obtenerElemento("#modalPersonas");
+    const modalDetalle = obtenerElemento("#modalDetalle");
+    const btnCerrarModalAcceso = obtenerElemento("#btnCerrarModalAcceso");
 
     let fiestaActual = null;
     let invitadosActuales = [];
     let qrScanner = null;
     let scannerActivo = false;
     let escaneoBloqueado = false;
-    let listaVisible = false;
+    let Html5QrcodeClass = null;
 
     const pinGuardado = sessionStorage.getItem("casino_admin_pin");
-
-    if (pinGuardado) {
-      adminPin.value = pinGuardado;
-    }
+    if (pinGuardado) adminPin.value = pinGuardado;
 
     function mensajeDeError(error) {
-      if (error instanceof Error) {
-        return error.message;
-      }
-
-      return "Ocurrió un error inesperado.";
+      return error instanceof Error ? error.message : "Ocurrió un error inesperado.";
     }
 
     async function leerJson(response) {
       const contentType = response.headers.get("content-type") || "";
-
       if (!contentType.includes("application/json")) {
         throw new Error("La API no respondió con JSON válido. Revisa que la ruta exista y no esté regresando HTML.");
       }
-
       return await response.json();
     }
 
@@ -227,10 +207,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
     }
 
     function obtenerNumeroMesa(invitado) {
-      if (invitado.mesa_numero !== null && invitado.mesa_numero !== undefined) {
-        return Number(invitado.mesa_numero);
-      }
-
+      if (invitado.mesa_numero !== null && invitado.mesa_numero !== undefined) return Number(invitado.mesa_numero);
       const match = String(invitado.mesa_nombre || "").match(/\d+/);
       return match ? Number(match[0]) : null;
     }
@@ -240,17 +217,13 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
       return numero ? `Mesa ${numero}` : "Sin mesa";
     }
 
-
     function mostrarResultadoQr(tipo, titulo, detalle) {
       qrResultado.className = `scan-result ${tipo}`;
       qrResultado.innerHTML = "";
-
       const h3 = document.createElement("h3");
       h3.textContent = titulo;
-
       const p = document.createElement("p");
       p.textContent = detalle;
-
       qrResultado.append(h3, p);
       qrResultado.classList.remove("hidden");
     }
@@ -260,35 +233,43 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
       qrResultado.innerHTML = "";
     }
 
+    function mostrarModalAcceso(tipo, invitado, detalleExtra = "") {
+      const nombre = invitado?.nombre || "Invitado";
+      const mesa = invitado ? textoMesa(invitado) : "-";
+      const personas = invitado ? obtenerCantidadInvitados(invitado) : 0;
+
+      modalAcceso.className = `access-modal ${tipo}`;
+      modalIcono.textContent = tipo === "aprobado" ? "✓" : tipo === "advertencia" ? "!" : "×";
+      modalEstado.textContent = tipo === "aprobado" ? "ESTE INVITADO PUEDE PASAR" : tipo === "advertencia" ? "INVITADO YA REGISTRADO" : "ACCESO RECHAZADO";
+      modalNombre.textContent = nombre;
+      modalMesa.textContent = mesa;
+      modalPersonas.textContent = `${personas} persona(s)`;
+      modalDetalle.textContent = detalleExtra || `${nombre} va en ${mesa} con ${personas} persona(s).`;
+      modalAcceso.classList.remove("hidden");
+    }
+
+    function cerrarModalAcceso() {
+      modalAcceso.classList.add("hidden");
+      ocultarResultadoQr();
+    }
+
     function parsearQr(textoQr) {
       const texto = limpiarTexto(textoQr);
+      if (!texto) return null;
 
-      if (!texto) {
-        return null;
-      }
-
-      // Formato recomendado: CMGUEST|CM-8F4K2|ID_INVITADO
       const partes = texto.split("|").map((parte) => limpiarTexto(parte));
-
       if (partes.length === 3 && partes[0].toUpperCase() === "CMGUEST") {
-        return {
-          codigo: partes[1].toUpperCase(),
-          invitadoId: partes[2]
-        };
+        return { codigo: partes[1].toUpperCase(), invitadoId: partes[2] };
       }
 
-      // También acepta JSON: {"codigo":"CM-8F4K2","invitadoId":"uuid"}
       try {
         const data = JSON.parse(texto);
         return {
           codigo: limpiarTexto(data.codigo || data.fiesta).toUpperCase(),
           invitadoId: limpiarTexto(data.invitadoId || data.invitado || data.id)
         };
-      } catch {
-        // Continuamos para intentar con URL.
-      }
+      } catch {}
 
-      // También acepta URL con query params: ?codigo=CM-8F4K2&id=uuid
       try {
         const url = new URL(texto);
         return {
@@ -311,24 +292,8 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
       loginView.classList.remove("hidden");
       document.body.classList.remove("dashboard-active");
       ocultarEstado(dashboardEstado);
-
-      if (limpiarCodigo) {
-        codigoFiesta.value = "";
-      }
-
+      if (limpiarCodigo) codigoFiesta.value = "";
       window.setTimeout(() => codigoFiesta.focus(), 50);
-    }
-
-    function actualizarTotales() {
-      const registros = invitadosActuales.length;
-      const personas = invitadosActuales.reduce((suma, item) => suma + obtenerCantidadInvitados(item), 0);
-      const asistentes = invitadosActuales.reduce((suma, item) => item.asistio ? suma + obtenerCantidadInvitados(item) : suma, 0);
-      const pendientes = Math.max(personas - asistentes, 0);
-
-      totalRegistros.textContent = String(registros);
-      totalPersonas.textContent = String(personas);
-      totalAsistentes.textContent = String(asistentes);
-      totalPendientes.textContent = String(pendientes);
     }
 
     async function consultarLista() {
@@ -354,31 +319,21 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
 
       try {
         const response = await fetch(`/api/fiestas/${encodeURIComponent(codigo)}`, {
-          headers: {
-            "x-admin-pin": pin
-          }
+          headers: { "x-admin-pin": pin }
         });
-
         const data = await leerJson(response);
 
-        if (!response.ok || !data.ok) {
-          throw new Error(data.message || "No se pudo consultar la lista.");
-        }
+        if (!response.ok || !data.ok) throw new Error(data.message || "No se pudo consultar la lista.");
 
         fiestaActual = data.fiesta;
         invitadosActuales = Array.isArray(data.invitados) ? data.invitados : [];
         resCodigo.textContent = fiestaActual.codigo;
         tipoLista.textContent = fiestaActual.usa_mesas ? "Con mesas" : "Lista general";
         buscador.value = "";
-        actualizarTotales();
         renderizarLista();
-
-        listaVisible = false;
-        toolsCard.classList.add("hidden");
-        listaContenedor.classList.add("hidden");
-        btnVerLista.textContent = "Ver lista";
+        toolsCard.classList.remove("hidden");
+        listaContenedor.classList.remove("hidden");
         ocultarResultadoQr();
-
         ocultarEstado(estado);
         mostrarDashboard();
       } catch (error) {
@@ -392,14 +347,12 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
 
     function obtenerFiltrados() {
       const q = normalizar(buscador.value);
-
-      if (!q) {
-        return invitadosActuales;
-      }
+      if (!q) return invitadosActuales;
 
       return invitadosActuales.filter((invitado) => {
         const numeroMesa = obtenerNumeroMesa(invitado);
         const texto = [
+          invitado.id,
           invitado.nombre,
           invitado.telefono,
           invitado.mesa_nombre,
@@ -407,32 +360,21 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
           invitado.cantidad_invitados,
           invitado.asistio ? "asistió" : "pendiente"
         ].join(" ").toLowerCase();
-
         return texto.includes(q);
       });
     }
 
     function agruparPorMesa(invitados) {
       const grupos = new Map();
-
       for (const invitado of invitados) {
         const mesa = textoMesa(invitado);
-
-        if (!grupos.has(mesa)) {
-          grupos.set(mesa, []);
-        }
-
+        if (!grupos.has(mesa)) grupos.set(mesa, []);
         grupos.get(mesa).push(invitado);
       }
-
       return [...grupos.entries()].sort((a, b) => {
         const numeroA = obtenerNumeroMesa(a[1][0]) ?? 999999;
         const numeroB = obtenerNumeroMesa(b[1][0]) ?? 999999;
-
-        if (numeroA !== numeroB) {
-          return numeroA - numeroB;
-        }
-
+        if (numeroA !== numeroB) return numeroA - numeroB;
         return a[0].localeCompare(b[0], "es");
       });
     }
@@ -447,34 +389,27 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
 
       const info = document.createElement("div");
       info.className = "guest-info";
-
       const nombre = document.createElement("strong");
       nombre.textContent = invitado.nombre || "Sin nombre";
-
       const meta = document.createElement("p");
       const telefono = invitado.telefono || "Sin teléfono";
       const capacidad = invitado.mesa_capacidad ? ` · ${invitado.mesa_capacidad} pers. por mesa` : "";
       meta.textContent = `${telefono} · ${obtenerCantidadInvitados(invitado)} invitado(s)${capacidad}`;
-
       info.append(nombre, meta);
 
       const actions = document.createElement("div");
       actions.className = "guest-actions";
-
       const mesaBadge = document.createElement("span");
       mesaBadge.className = obtenerNumeroMesa(invitado) ? "mesa-badge" : "mesa-badge no-mesa";
       mesaBadge.textContent = textoMesa(invitado);
-
       const estadoAsistencia = document.createElement("span");
       estadoAsistencia.className = `status ${invitado.asistio ? "ok" : "pending"}`;
       estadoAsistencia.textContent = invitado.asistio ? "Asistió" : "Pendiente";
-
       const boton = document.createElement("button");
       boton.type = "button";
       boton.className = "small-button";
       boton.textContent = invitado.asistio ? "Quitar" : "Marcar";
       boton.addEventListener("click", () => cambiarAsistencia(invitado.id, !invitado.asistio));
-
       actions.append(mesaBadge, estadoAsistencia, boton);
       fila.append(avatar, info, actions);
       return fila;
@@ -493,55 +428,34 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
       }
 
       if (fiestaActual?.usa_mesas) {
-        const grupos = agruparPorMesa(invitados);
-
-        for (const [mesa, lista] of grupos) {
+        for (const [mesa, lista] of agruparPorMesa(invitados)) {
           const seccion = document.createElement("section");
           seccion.className = "group-card";
-
           const header = document.createElement("div");
           header.className = "group-header";
-
           const titulo = document.createElement("h2");
           titulo.textContent = mesa;
-
           const total = document.createElement("span");
-          const totalPersonasMesa = lista.reduce((suma, item) => suma + obtenerCantidadInvitados(item), 0);
-          total.textContent = `${totalPersonasMesa} personas`;
-
+          total.textContent = `${lista.reduce((suma, item) => suma + obtenerCantidadInvitados(item), 0)} personas`;
           header.append(titulo, total);
           seccion.append(header);
-
-          for (const invitado of lista) {
-            seccion.append(crearFila(invitado));
-          }
-
+          for (const invitado of lista) seccion.append(crearFila(invitado));
           listaContenedor.append(seccion);
         }
-
         return;
       }
 
       const seccion = document.createElement("section");
       seccion.className = "group-card";
-
       const header = document.createElement("div");
       header.className = "group-header";
-
       const titulo = document.createElement("h2");
       titulo.textContent = "Lista general";
-
       const total = document.createElement("span");
-      const totalPersonasLista = invitados.reduce((suma, item) => suma + obtenerCantidadInvitados(item), 0);
-      total.textContent = `${totalPersonasLista} personas`;
-
+      total.textContent = `${invitados.reduce((suma, item) => suma + obtenerCantidadInvitados(item), 0)} personas`;
       header.append(titulo, total);
       seccion.append(header);
-
-      for (const invitado of invitados) {
-        seccion.append(crearFila(invitado));
-      }
-
+      for (const invitado of invitados) seccion.append(crearFila(invitado));
       listaContenedor.append(seccion);
     }
 
@@ -556,17 +470,11 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
             "Content-Type": "application/json",
             "x-admin-pin": pin
           },
-          body: JSON.stringify({ asistio })
+          body: JSON.stringify({ asistio, codigo: fiestaActual?.codigo })
         });
-
         const data = await leerJson(response);
-
-        if (!response.ok || !data.ok) {
-          throw new Error(data.message || "No se pudo actualizar la asistencia.");
-        }
-
+        if (!response.ok || !data.ok) throw new Error(data.message || "No se pudo actualizar la asistencia.");
         invitadosActuales = invitadosActuales.map((item) => item.id === id ? { ...item, asistio } : item);
-        actualizarTotales();
         renderizarLista();
         return true;
       } catch (error) {
@@ -576,179 +484,105 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
     }
 
     async function procesarQr(textoQr) {
-      if (escaneoBloqueado) {
-        return;
-      }
-
+      if (escaneoBloqueado) return;
       escaneoBloqueado = true;
 
       try {
+        await detenerScanner();
         const datosQr = parsearQr(textoQr);
 
         if (!datosQr || !datosQr.codigo || !datosQr.invitadoId) {
-          mostrarResultadoQr(
-            "rechazado",
-            "QR inválido",
-            "Este código no pertenece al sistema de Casino Moments."
-          );
+          mostrarModalAcceso("rechazado", null, "Este código no pertenece al sistema de Casino Moments.");
           return;
         }
 
         if (!fiestaActual) {
-          mostrarResultadoQr(
-            "rechazado",
-            "Sin fiesta cargada",
-            "Primero inicia sesión con el ID de fiesta."
-          );
+          mostrarModalAcceso("rechazado", null, "Primero inicia sesión con el ID de fiesta.");
           return;
         }
 
         if (datosQr.codigo !== fiestaActual.codigo) {
-          mostrarResultadoQr(
-            "rechazado",
-            "QR de otra fiesta",
-            `Este QR pertenece a ${datosQr.codigo}, pero estás en ${fiestaActual.codigo}.`
-          );
+          mostrarModalAcceso("rechazado", null, `Este QR pertenece a ${datosQr.codigo}, pero estás en ${fiestaActual.codigo}.`);
           return;
         }
 
-        const invitado = invitadosActuales.find(
-          (item) => String(item.id) === String(datosQr.invitadoId)
-        );
-
+        const invitado = invitadosActuales.find((item) => String(item.id) === String(datosQr.invitadoId));
         if (!invitado) {
-          mostrarResultadoQr(
-            "rechazado",
-            "No autorizado",
-            "Este invitado no está en la lista de esta fiesta."
-          );
+          mostrarModalAcceso("rechazado", null, "Este invitado no está en la lista de esta fiesta.");
           return;
         }
-
-        const mesa = textoMesa(invitado);
-        const nombre = invitado.nombre || "Familia sin nombre";
 
         if (invitado.asistio) {
-          mostrarResultadoQr(
-            "advertencia",
-            "Ya estaba registrado",
-            `${nombre} · ${mesa}`
-          );
+          mostrarModalAcceso("advertencia", invitado, `${invitado.nombre || "Invitado"} ya estaba registrado. Mesa: ${textoMesa(invitado)} · ${obtenerCantidadInvitados(invitado)} persona(s).`);
           return;
         }
 
         const actualizado = await cambiarAsistencia(invitado.id, true);
-
         if (!actualizado) {
-          mostrarResultadoQr(
-            "rechazado",
-            "No se pudo marcar asistencia",
-            "Intenta escanear de nuevo o busca al invitado manualmente."
-          );
+          mostrarModalAcceso("rechazado", invitado, "No se pudo marcar asistencia. Intenta de nuevo o márcalo manualmente.");
           return;
         }
 
-        mostrarResultadoQr(
+        const invitadoActualizado = { ...invitado, asistio: true };
+        mostrarModalAcceso(
           "aprobado",
-          "Aprobado",
-          `${nombre} · ${mesa}`
+          invitadoActualizado,
+          `Puede pasar. Va en ${textoMesa(invitadoActualizado)} con ${obtenerCantidadInvitados(invitadoActualizado)} persona(s).`
         );
       } finally {
-        window.setTimeout(() => {
-          escaneoBloqueado = false;
-        }, 1800);
+        window.setTimeout(() => { escaneoBloqueado = false; }, 800);
+      }
+    }
+
+    async function cargarScannerQr() {
+      if (Html5QrcodeClass) return Html5QrcodeClass;
+      try {
+        const modulo = await import("html5-qrcode");
+        Html5QrcodeClass = modulo.Html5Qrcode;
+        return Html5QrcodeClass;
+      } catch {
+        throw new Error("No se pudo cargar el lector QR. Ejecuta: npm install html5-qrcode");
       }
     }
 
     async function iniciarScanner() {
       if (!fiestaActual) {
-        mostrarResultadoQr(
-          "rechazado",
-          "Sin fiesta cargada",
-          "Primero ingresa con PIN administrador e ID de fiesta."
-        );
+        mostrarResultadoQr("rechazado", "Sin fiesta cargada", "Primero ingresa con PIN administrador e ID de fiesta.");
         return;
       }
-
-      if (scannerActivo) {
-        return;
-      }
-
+      if (scannerActivo) return;
       ocultarResultadoQr();
 
       try {
-        if (!qrScanner) {
-          qrScanner = new Html5Qrcode("qrReader");
-        }
+        const Html5Qrcode = await cargarScannerQr();
+        if (!qrScanner) qrScanner = new Html5Qrcode("qrReader");
 
         await qrScanner.start(
           { facingMode: "environment" },
-          {
-            fps: 10,
-            qrbox: {
-              width: 260,
-              height: 260
-            }
-          },
-          (decodedText) => {
-            procesarQr(decodedText);
-          },
-          () => {
-            // Ignoramos lecturas fallidas para no llenar la pantalla de errores.
-          }
+          { fps: 10, qrbox: { width: 260, height: 260 } },
+          (decodedText) => procesarQr(decodedText),
+          () => {}
         );
 
         scannerActivo = true;
         btnIniciarScanner.disabled = true;
         btnDetenerScanner.disabled = false;
       } catch (error) {
-        mostrarResultadoQr(
-          "rechazado",
-          "No se pudo abrir la cámara",
-          mensajeDeError(error)
-        );
+        mostrarResultadoQr("rechazado", "No se pudo abrir la cámara", mensajeDeError(error));
       }
     }
 
     async function detenerScanner() {
-      if (!qrScanner || !scannerActivo) {
-        return;
-      }
-
-      try {
-        await qrScanner.stop();
-        await qrScanner.clear();
-      } catch {
-        // No bloqueamos la interfaz si la cámara ya estaba cerrada.
-      }
-
+      if (!qrScanner || !scannerActivo) return;
+      try { await qrScanner.stop(); } catch {}
+      try { qrScanner.clear(); } catch {}
       scannerActivo = false;
       btnIniciarScanner.disabled = false;
       btnDetenerScanner.disabled = true;
     }
 
-    function alternarLista() {
-      listaVisible = !listaVisible;
-
-      if (listaVisible) {
-        toolsCard.classList.remove("hidden");
-        listaContenedor.classList.remove("hidden");
-        btnVerLista.textContent = "Ocultar lista";
-        renderizarLista();
-        buscador.focus();
-      } else {
-        toolsCard.classList.add("hidden");
-        listaContenedor.classList.add("hidden");
-        btnVerLista.textContent = "Ver lista";
-        buscador.value = "";
-      }
-    }
-
     function exportarCsv() {
-      if (!fiestaActual) {
-        return;
-      }
-
+      if (!fiestaActual) return;
       const invitados = obtenerFiltrados();
       const encabezados = ["ID Fiesta", "Nombre", "Teléfono", "Cantidad", "Número mesa", "Mesa", "Personas por mesa", "Asistió"];
       const filas = invitados.map((invitado) => [
@@ -761,12 +595,8 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
         invitado.mesa_capacidad || "",
         invitado.asistio ? "Sí" : "No"
       ]);
-
-      const csv = [encabezados, ...filas]
-        .map((fila) => fila.map(escaparCsv).join(","))
-        .join("\n");
-
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const csv = [encabezados, ...filas].map((fila) => fila.map(escaparCsv).join(",")).join("\n");
+      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -779,21 +609,20 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
 
     async function salir() {
       await detenerScanner();
-
       sessionStorage.removeItem("casino_admin_pin");
       adminPin.value = "";
       codigoFiesta.value = "";
       fiestaActual = null;
       invitadosActuales = [];
       listaContenedor.innerHTML = "";
-
-      listaVisible = false;
       toolsCard.classList.add("hidden");
       listaContenedor.classList.add("hidden");
-      btnVerLista.textContent = "Ver lista";
-      ocultarResultadoQr();
-
+      cerrarModalAcceso();
       mostrarLogin(true);
+    }
+
+    function manejarEnterLogin(event) {
+      if (event.key === "Enter") consultarLista();
     }
 
     btnConsultar.addEventListener("click", consultarLista);
@@ -804,16 +633,15 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
     btnSalir.addEventListener("click", salir);
     btnIniciarScanner.addEventListener("click", iniciarScanner);
     btnDetenerScanner.addEventListener("click", detenerScanner);
-    btnVerLista.addEventListener("click", alternarLista);
+    btnCerrarModalAcceso.addEventListener("click", cerrarModalAcceso);
+    modalAcceso.addEventListener("click", (event) => {
+      if (event.target === modalAcceso) cerrarModalAcceso();
+    });
     codigoFiesta.addEventListener("input", () => {
       codigoFiesta.value = codigoFiesta.value.toUpperCase();
     });
-    codigoFiesta.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") consultarLista();
-    });
-    adminPin.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") consultarLista();
-    });
+    codigoFiesta.addEventListener("keydown", manejarEnterLogin);
+    adminPin.addEventListener("keydown", manejarEnterLogin);
     buscador.addEventListener("input", renderizarLista);
     btnExportar.addEventListener("click", exportarCsv);
   </script>
