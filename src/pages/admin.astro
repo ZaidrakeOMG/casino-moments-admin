@@ -134,8 +134,43 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
   <script>
     import { Html5Qrcode } from "html5-qrcode";
 
-    function obtenerElemento(selector) {
-      const elemento = document.querySelector(selector);
+    type EstadoTipo = "info" | "error" | "aprobado" | "rechazado" | "advertencia";
+
+    type Fiesta = {
+      codigo: string;
+      usa_mesas: boolean;
+    };
+
+    type Invitado = {
+      id: string | number;
+      nombre?: string | null;
+      telefono?: string | null;
+      cantidad_invitados?: string | number | null;
+      asistio?: boolean | null;
+      mesa_numero?: string | number | null;
+      mesa_nombre?: string | null;
+      mesa_capacidad?: string | number | null;
+    };
+
+    type DatosQr = {
+      codigo: string;
+      invitadoId: string;
+    };
+
+    type ApiListaResponse = {
+      ok?: boolean;
+      message?: string;
+      fiesta?: Fiesta;
+      invitados?: Invitado[];
+    };
+
+    type ApiSimpleResponse = {
+      ok?: boolean;
+      message?: string;
+    };
+
+    function obtenerElemento<T extends HTMLElement>(selector: string): T {
+      const elemento = document.querySelector<T>(selector);
 
       if (!elemento) {
         throw new Error(`No se encontró el elemento ${selector}`);
@@ -144,33 +179,33 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
       return elemento;
     }
 
-    const loginView = obtenerElemento("#loginView");
-    const adminPin = obtenerElemento("#adminPin");
-    const codigoFiesta = obtenerElemento("#codigoFiesta");
-    const btnConsultar = obtenerElemento("#btnConsultar");
-    const btnCambiarFiesta = obtenerElemento("#btnCambiarFiesta");
-    const btnSalir = obtenerElemento("#btnSalir");
-    const estado = obtenerElemento("#estado");
-    const dashboardEstado = obtenerElemento("#dashboardEstado");
-    const resultado = obtenerElemento("#resultado");
-    const resCodigo = obtenerElemento("#resCodigo");
-    const totalRegistros = obtenerElemento("#totalRegistros");
-    const totalPersonas = obtenerElemento("#totalPersonas");
-    const totalAsistentes = obtenerElemento("#totalAsistentes");
-    const totalPendientes = obtenerElemento("#totalPendientes");
-    const tipoLista = obtenerElemento("#tipoLista");
-    const buscador = obtenerElemento("#buscador");
-    const btnExportar = obtenerElemento("#btnExportar");
-    const listaContenedor = obtenerElemento("#listaContenedor");
-    const toolsCard = obtenerElemento("#toolsCard");
-    const btnIniciarScanner = obtenerElemento("#btnIniciarScanner");
-    const btnDetenerScanner = obtenerElemento("#btnDetenerScanner");
-    const btnVerLista = obtenerElemento("#btnVerLista");
-    const qrResultado = obtenerElemento("#qrResultado");
+    const loginView = obtenerElemento<HTMLElement>("#loginView");
+    const adminPin = obtenerElemento<HTMLInputElement>("#adminPin");
+    const codigoFiesta = obtenerElemento<HTMLInputElement>("#codigoFiesta");
+    const btnConsultar = obtenerElemento<HTMLButtonElement>("#btnConsultar");
+    const btnCambiarFiesta = obtenerElemento<HTMLButtonElement>("#btnCambiarFiesta");
+    const btnSalir = obtenerElemento<HTMLButtonElement>("#btnSalir");
+    const estado = obtenerElemento<HTMLElement>("#estado");
+    const dashboardEstado = obtenerElemento<HTMLElement>("#dashboardEstado");
+    const resultado = obtenerElemento<HTMLElement>("#resultado");
+    const resCodigo = obtenerElemento<HTMLElement>("#resCodigo");
+    const totalRegistros = obtenerElemento<HTMLElement>("#totalRegistros");
+    const totalPersonas = obtenerElemento<HTMLElement>("#totalPersonas");
+    const totalAsistentes = obtenerElemento<HTMLElement>("#totalAsistentes");
+    const totalPendientes = obtenerElemento<HTMLElement>("#totalPendientes");
+    const tipoLista = obtenerElemento<HTMLElement>("#tipoLista");
+    const buscador = obtenerElemento<HTMLInputElement>("#buscador");
+    const btnExportar = obtenerElemento<HTMLButtonElement>("#btnExportar");
+    const listaContenedor = obtenerElemento<HTMLElement>("#listaContenedor");
+    const toolsCard = obtenerElemento<HTMLElement>("#toolsCard");
+    const btnIniciarScanner = obtenerElemento<HTMLButtonElement>("#btnIniciarScanner");
+    const btnDetenerScanner = obtenerElemento<HTMLButtonElement>("#btnDetenerScanner");
+    const btnVerLista = obtenerElemento<HTMLButtonElement>("#btnVerLista");
+    const qrResultado = obtenerElemento<HTMLElement>("#qrResultado");
 
-    let fiestaActual = null;
-    let invitadosActuales = [];
-    let qrScanner = null;
+    let fiestaActual: Fiesta | null = null;
+    let invitadosActuales: Invitado[] = [];
+    let qrScanner: Html5Qrcode | null = null;
     let scannerActivo = false;
     let escaneoBloqueado = false;
     let listaVisible = false;
@@ -181,7 +216,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
       adminPin.value = pinGuardado;
     }
 
-    function mensajeDeError(error) {
+    function mensajeDeError(error: unknown): string {
       if (error instanceof Error) {
         return error.message;
       }
@@ -189,7 +224,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
       return "Ocurrió un error inesperado.";
     }
 
-    async function leerJson(response) {
+    async function leerJson<T>(response: Response): Promise<T> {
       const contentType = response.headers.get("content-type") || "";
 
       if (!contentType.includes("application/json")) {
@@ -199,34 +234,34 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
       return await response.json();
     }
 
-    function mostrarEstado(elemento, texto, tipo = "info") {
+    function mostrarEstado(elemento: HTMLElement, texto: string, tipo: EstadoTipo = "info"): void {
       elemento.textContent = texto;
       elemento.className = `state ${tipo}`;
       elemento.classList.remove("hidden");
     }
 
-    function ocultarEstado(elemento) {
+    function ocultarEstado(elemento: HTMLElement): void {
       elemento.classList.add("hidden");
     }
 
-    function limpiarTexto(valor) {
+    function limpiarTexto(valor: unknown): string {
       return String(valor || "").trim();
     }
 
-    function normalizar(valor) {
+    function normalizar(valor: unknown): string {
       return limpiarTexto(valor).toLowerCase();
     }
 
-    function escaparCsv(valor) {
+    function escaparCsv(valor: unknown): string {
       const texto = String(valor ?? "").replaceAll('"', '""');
       return `"${texto}"`;
     }
 
-    function obtenerCantidadInvitados(invitado) {
+    function obtenerCantidadInvitados(invitado: Invitado): number {
       return Number(invitado.cantidad_invitados || 0);
     }
 
-    function obtenerNumeroMesa(invitado) {
+    function obtenerNumeroMesa(invitado: Invitado): number | null {
       if (invitado.mesa_numero !== null && invitado.mesa_numero !== undefined) {
         return Number(invitado.mesa_numero);
       }
@@ -235,13 +270,13 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
       return match ? Number(match[0]) : null;
     }
 
-    function textoMesa(invitado) {
+    function textoMesa(invitado: Invitado): string {
       const numero = obtenerNumeroMesa(invitado);
       return numero ? `Mesa ${numero}` : "Sin mesa";
     }
 
 
-    function mostrarResultadoQr(tipo, titulo, detalle) {
+    function mostrarResultadoQr(tipo: EstadoTipo, titulo: string, detalle: string): void {
       qrResultado.className = `scan-result ${tipo}`;
       qrResultado.innerHTML = "";
 
@@ -255,12 +290,12 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
       qrResultado.classList.remove("hidden");
     }
 
-    function ocultarResultadoQr() {
+    function ocultarResultadoQr(): void {
       qrResultado.classList.add("hidden");
       qrResultado.innerHTML = "";
     }
 
-    function parsearQr(textoQr) {
+    function parsearQr(textoQr: unknown): DatosQr | null {
       const texto = limpiarTexto(textoQr);
 
       if (!texto) {
@@ -279,7 +314,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
 
       // También acepta JSON: {"codigo":"CM-8F4K2","invitadoId":"uuid"}
       try {
-        const data = JSON.parse(texto);
+        const data = JSON.parse(texto) as Record<string, unknown>;
         return {
           codigo: limpiarTexto(data.codigo || data.fiesta).toUpperCase(),
           invitadoId: limpiarTexto(data.invitadoId || data.invitado || data.id)
@@ -300,13 +335,13 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
       }
     }
 
-    function mostrarDashboard() {
+    function mostrarDashboard(): void {
       loginView.classList.add("hidden");
       resultado.classList.remove("hidden");
       document.body.classList.add("dashboard-active");
     }
 
-    function mostrarLogin(limpiarCodigo = false) {
+    function mostrarLogin(limpiarCodigo = false): void {
       resultado.classList.add("hidden");
       loginView.classList.remove("hidden");
       document.body.classList.remove("dashboard-active");
@@ -319,7 +354,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
       window.setTimeout(() => codigoFiesta.focus(), 50);
     }
 
-    function actualizarTotales() {
+    function actualizarTotales(): void {
       const registros = invitadosActuales.length;
       const personas = invitadosActuales.reduce((suma, item) => suma + obtenerCantidadInvitados(item), 0);
       const asistentes = invitadosActuales.reduce((suma, item) => item.asistio ? suma + obtenerCantidadInvitados(item) : suma, 0);
@@ -331,7 +366,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
       totalPendientes.textContent = String(pendientes);
     }
 
-    async function consultarLista() {
+    async function consultarLista(): Promise<void> {
       const pin = limpiarTexto(adminPin.value);
       const codigo = limpiarTexto(codigoFiesta.value).toUpperCase();
 
@@ -359,10 +394,14 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
           }
         });
 
-        const data = await leerJson(response);
+        const data = await leerJson<ApiListaResponse>(response);
 
         if (!response.ok || !data.ok) {
           throw new Error(data.message || "No se pudo consultar la lista.");
+        }
+
+        if (!data.fiesta) {
+          throw new Error("La API no regresó información de la fiesta.");
         }
 
         fiestaActual = data.fiesta;
@@ -390,7 +429,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
       }
     }
 
-    function obtenerFiltrados() {
+    function obtenerFiltrados(): Invitado[] {
       const q = normalizar(buscador.value);
 
       if (!q) {
@@ -412,7 +451,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
       });
     }
 
-    function agruparPorMesa(invitados) {
+    function agruparPorMesa(invitados: Invitado[]): [string, Invitado[]][] {
       const grupos = new Map();
 
       for (const invitado of invitados) {
@@ -437,7 +476,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
       });
     }
 
-    function crearFila(invitado) {
+    function crearFila(invitado: Invitado): HTMLDivElement {
       const fila = document.createElement("div");
       fila.className = `guest-row ${invitado.asistio ? "checked" : ""}`;
 
@@ -473,14 +512,14 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
       boton.type = "button";
       boton.className = "small-button";
       boton.textContent = invitado.asistio ? "Quitar" : "Marcar";
-      boton.addEventListener("click", () => cambiarAsistencia(invitado.id, !invitado.asistio));
+      boton.addEventListener("click", () => void cambiarAsistencia(invitado.id, !Boolean(invitado.asistio)));
 
       actions.append(mesaBadge, estadoAsistencia, boton);
       fila.append(avatar, info, actions);
       return fila;
     }
 
-    function renderizarLista() {
+    function renderizarLista(): void {
       const invitados = obtenerFiltrados();
       listaContenedor.innerHTML = "";
 
@@ -545,7 +584,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
       listaContenedor.append(seccion);
     }
 
-    async function cambiarAsistencia(id, asistio) {
+    async function cambiarAsistencia(id: string | number, asistio: boolean): Promise<boolean> {
       const pin = limpiarTexto(adminPin.value);
       ocultarEstado(dashboardEstado);
 
@@ -559,7 +598,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
           body: JSON.stringify({ asistio })
         });
 
-        const data = await leerJson(response);
+        const data = await leerJson<ApiSimpleResponse>(response);
 
         if (!response.ok || !data.ok) {
           throw new Error(data.message || "No se pudo actualizar la asistencia.");
@@ -575,7 +614,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
       }
     }
 
-    async function procesarQr(textoQr) {
+    async function procesarQr(textoQr: string): Promise<void> {
       if (escaneoBloqueado) {
         return;
       }
@@ -660,7 +699,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
       }
     }
 
-    async function iniciarScanner() {
+    async function iniciarScanner(): Promise<void> {
       if (!fiestaActual) {
         mostrarResultadoQr(
           "rechazado",
@@ -690,8 +729,8 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
               height: 260
             }
           },
-          (decodedText) => {
-            procesarQr(decodedText);
+          (decodedText: string) => {
+            void procesarQr(decodedText);
           },
           () => {
             // Ignoramos lecturas fallidas para no llenar la pantalla de errores.
@@ -710,7 +749,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
       }
     }
 
-    async function detenerScanner() {
+    async function detenerScanner(): Promise<void> {
       if (!qrScanner || !scannerActivo) {
         return;
       }
@@ -727,7 +766,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
       btnDetenerScanner.disabled = true;
     }
 
-    function alternarLista() {
+    function alternarLista(): void {
       listaVisible = !listaVisible;
 
       if (listaVisible) {
@@ -744,7 +783,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
       }
     }
 
-    function exportarCsv() {
+    function exportarCsv(): void {
       if (!fiestaActual) {
         return;
       }
@@ -777,7 +816,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
       URL.revokeObjectURL(url);
     }
 
-    async function salir() {
+    async function salir(): Promise<void> {
       await detenerScanner();
 
       sessionStorage.removeItem("casino_admin_pin");
@@ -796,23 +835,23 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
       mostrarLogin(true);
     }
 
-    btnConsultar.addEventListener("click", consultarLista);
+    btnConsultar.addEventListener("click", () => void consultarLista());
     btnCambiarFiesta.addEventListener("click", async () => {
       await detenerScanner();
       mostrarLogin(true);
     });
-    btnSalir.addEventListener("click", salir);
-    btnIniciarScanner.addEventListener("click", iniciarScanner);
-    btnDetenerScanner.addEventListener("click", detenerScanner);
+    btnSalir.addEventListener("click", () => void salir());
+    btnIniciarScanner.addEventListener("click", () => void iniciarScanner());
+    btnDetenerScanner.addEventListener("click", () => void detenerScanner());
     btnVerLista.addEventListener("click", alternarLista);
     codigoFiesta.addEventListener("input", () => {
       codigoFiesta.value = codigoFiesta.value.toUpperCase();
     });
-    codigoFiesta.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") consultarLista();
+    codigoFiesta.addEventListener("keydown", (event: KeyboardEvent) => {
+      if (event.key === "Enter") void consultarLista();
     });
-    adminPin.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") consultarLista();
+    adminPin.addEventListener("keydown", (event: KeyboardEvent) => {
+      if (event.key === "Enter") void consultarLista();
     });
     buscador.addEventListener("input", renderizarLista);
     btnExportar.addEventListener("click", exportarCsv);
