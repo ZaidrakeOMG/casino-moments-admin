@@ -1,7 +1,7 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 
-const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
+const appName = "Lista Admin";
 ---
 
 <BaseLayout>
@@ -12,11 +12,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
 
       <article class="access-card">
         <div class="brand-top login-brand-top">
-          <div class="brand-mark image-brand">
-            <img src="/logo.png" alt="Casino Moments" />
-          </div>
           <div class="brand-title">
-            <p class="eyebrow">Casino Moments</p>
             <h1>{appName}</h1>
           </div>
         </div>
@@ -49,11 +45,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
     <section id="resultado" class="dashboard-view hidden">
       <header class="dashboard-header">
         <div class="header-main">
-          <div class="brand-mark image-brand header-logo">
-            <img src="/logo.png" alt="Casino Moments" />
-          </div>
           <div>
-            <p class="eyebrow">Casino Moments</p>
             <h1>Lista de invitados</h1>
             <p class="subtitle">Consulta, búsqueda y control de asistencia para recepción.</p>
           </div>
@@ -114,8 +106,16 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
           </div>
         </div>
 
-        <div id="qrReader" class="qr-reader"></div>
-        <section id="qrResultado" class="scan-result hidden"></section>
+        <div id="scannerModal" class="scanner-modal hidden">
+          <div class="scanner-modal-content">
+            <button id="btnCerrarModalScanner" class="modal-close" type="button">×</button>
+
+            <h2>Escanear QR</h2>
+            <div id="qrReader" class="qr-reader"></div>
+            <section id="qrResultado" class="scan-result hidden"></section>
+          </div>
+        </div>
+
       </section>
 
       <section id="toolsCard" class="tools-card hidden">
@@ -201,6 +201,8 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
     const btnIniciarScanner = obtenerElemento<HTMLButtonElement>("#btnIniciarScanner");
     const btnDetenerScanner = obtenerElemento<HTMLButtonElement>("#btnDetenerScanner");
     const btnVerLista = obtenerElemento<HTMLButtonElement>("#btnVerLista");
+    const scannerModal = obtenerElemento<HTMLElement>("#scannerModal");
+    const btnCerrarModalScanner = obtenerElemento<HTMLButtonElement>("#btnCerrarModalScanner");
     const qrResultado = obtenerElemento<HTMLElement>("#qrResultado");
 
     let fiestaActual: Fiesta | null = null;
@@ -210,7 +212,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
     let escaneoBloqueado = false;
     let listaVisible = false;
 
-    const pinGuardado = sessionStorage.getItem("casino_admin_pin");
+    const pinGuardado = sessionStorage.getItem("lista_admin_pin");
 
     if (pinGuardado) {
       adminPin.value = pinGuardado;
@@ -382,7 +384,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
         return;
       }
 
-      sessionStorage.setItem("casino_admin_pin", pin);
+      sessionStorage.setItem("lista_admin_pin", pin);
       btnConsultar.disabled = true;
       btnConsultar.textContent = "Validando acceso...";
       mostrarEstado(estado, "Buscando lista de invitados...", "info");
@@ -628,7 +630,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
           mostrarResultadoQr(
             "rechazado",
             "QR inválido",
-            "Este código no pertenece al sistema de Casino Moments."
+            "Este código no pertenece a esta lista."
           );
           return;
         }
@@ -710,10 +712,12 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
       }
 
       if (scannerActivo) {
+        scannerModal.classList.remove("hidden");
         return;
       }
 
       ocultarResultadoQr();
+      scannerModal.classList.remove("hidden");
 
       try {
         if (!qrScanner) {
@@ -750,20 +754,20 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
     }
 
     async function detenerScanner(): Promise<void> {
-      if (!qrScanner || !scannerActivo) {
-        return;
-      }
-
-      try {
-        await qrScanner.stop();
-        await qrScanner.clear();
-      } catch {
-        // No bloqueamos la interfaz si la cámara ya estaba cerrada.
+      if (qrScanner && scannerActivo) {
+        try {
+          await qrScanner.stop();
+          await qrScanner.clear();
+        } catch {
+          // No bloqueamos la interfaz si la cámara ya estaba cerrada.
+        }
       }
 
       scannerActivo = false;
       btnIniciarScanner.disabled = false;
       btnDetenerScanner.disabled = true;
+      scannerModal.classList.add("hidden");
+      ocultarResultadoQr();
     }
 
     function alternarLista(): void {
@@ -819,7 +823,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
     async function salir(): Promise<void> {
       await detenerScanner();
 
-      sessionStorage.removeItem("casino_admin_pin");
+      sessionStorage.removeItem("lista_admin_pin");
       adminPin.value = "";
       codigoFiesta.value = "";
       fiestaActual = null;
@@ -843,6 +847,17 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Casino Moments Admin";
     btnSalir.addEventListener("click", () => void salir());
     btnIniciarScanner.addEventListener("click", () => void iniciarScanner());
     btnDetenerScanner.addEventListener("click", () => void detenerScanner());
+    btnCerrarModalScanner.addEventListener("click", () => void detenerScanner());
+    scannerModal.addEventListener("click", (event: MouseEvent) => {
+      if (event.target === scannerModal) {
+        void detenerScanner();
+      }
+    });
+    document.addEventListener("keydown", (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !scannerModal.classList.contains("hidden")) {
+        void detenerScanner();
+      }
+    });
     btnVerLista.addEventListener("click", alternarLista);
     codigoFiesta.addEventListener("input", () => {
       codigoFiesta.value = codigoFiesta.value.toUpperCase();

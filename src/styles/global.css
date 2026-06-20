@@ -1070,4 +1070,96 @@ input:focus {
   .modal-grid {
     grid-template-columns: 1fr;
   }
+    
+  
+}
+
+
+/* ==========================================================================
+   Modal QR - ventana emergente
+   ========================================================================== */
+.scanner-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(8px);
+}
+
+.scanner-modal.hidden {
+  display: none !important;
+}
+
+.scanner-modal-content {
+  position: relative;
+  width: min(460px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+  padding: 26px;
+  border: 1px solid var(--line-strong);
+  border-radius: 24px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
+    #0b0b0b;
+  box-shadow: 0 34px 90px rgba(0, 0, 0, 0.85);
+}
+
+.scanner-modal-content h2 {
+  margin: 0 44px 18px 0;
+}
+
+.modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(212, 175, 55, 0.38);
+  border-radius: 999px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  border-color: rgba(255, 107, 107, 0.55);
+  color: #ffb3b3;
+}
+
+.scanner-modal .qr-reader {
+  max-width: 100%;
+  min-height: 300px;
+  background: #000;
+}
+
+/* Ocultar logo/imagen de marca en admin sin afectar otros apartados */
+.login-brand-top .brand-mark,
+.login-brand-top .brand-mark img,
+.dashboard-header .brand-mark,
+.dashboard-header .brand-mark img,
+.header-logo,
+.header-logo img {
+  display: none !important;
+}
+
+@media (max-width: 560px) {
+  .scanner-modal {
+    padding: 14px;
+  }
+
+  .scanner-modal-content {
+    padding: 22px 16px;
+    border-radius: 22px;
+  }
+
+  .scanner-modal .qr-reader {
+    min-height: 260px;
+  }
 }
