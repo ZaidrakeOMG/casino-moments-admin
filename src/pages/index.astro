@@ -28,7 +28,13 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Lista Admin";
             <input id="codigoFiesta" type="text" placeholder="Ej. CM-84QJRT" autocomplete="off" />
           </label>
 
-          <button id="btnConsultar" class="primary-button" type="button">Entrar a la lista</button>
+          <button id="btnConsultar" class="primary-button" type="button">
+            Entrar a la lista
+          </button>
+
+          <button id="btnAbrirConsultaCodigo" class="secondary-button" type="button">
+            Consultar código de fiesta
+          </button>
         </div>
 
         <p class="hint">El cliente debe entregar el ID generado en la app pública.</p>
@@ -83,6 +89,39 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Lista Admin";
 
       <section id="dashboardEstado" class="state dashboard-state hidden"></section>
       <section id="listaContenedor" class="list-container hidden"></section>
+    </section>
+
+    <section id="modalConsultaCodigo" class="access-modal hidden" aria-live="polite">
+      <article class="access-modal-card">
+        <div class="access-copy">
+          <span class="luxury-line"></span>
+          <h2>Consultar código</h2>
+          <p>Busca el código de fiesta por nombre del salón y fecha del evento.</p>
+        </div>
+
+        <div class="login-form">
+          <label>
+            <span>Nombre del salón</span>
+            <input id="salonConsulta" type="text" placeholder="Ej. Casino Andares" autocomplete="off" />
+          </label>
+
+          <label>
+            <span>Fecha del evento</span>
+            <input id="fechaConsulta" type="date" />
+          </label>
+
+          <button id="btnBuscarCodigo" class="primary-button" type="button">
+            Buscar código
+          </button>
+
+          <button id="btnCerrarConsultaCodigo" class="ghost-button danger-button" type="button">
+            Cerrar
+          </button>
+        </div>
+
+        <section id="estadoConsultaCodigo" class="state hidden"></section>
+        <section id="resultadoCodigoEvento" class="list-container hidden"></section>
+      </article>
     </section>
 
     <section id="modalAcceso" class="access-modal hidden" aria-live="polite">
@@ -146,6 +185,14 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Lista Admin";
     const modalPersonas = obtenerElemento("#modalPersonas");
     const modalDetalle = obtenerElemento("#modalDetalle");
     const btnCerrarModalAcceso = obtenerElemento("#btnCerrarModalAcceso");
+    const modalConsultaCodigo = obtenerElemento("#modalConsultaCodigo");
+    const btnAbrirConsultaCodigo = obtenerElemento("#btnAbrirConsultaCodigo");
+    const btnCerrarConsultaCodigo = obtenerElemento("#btnCerrarConsultaCodigo");
+    const salonConsulta = obtenerElemento("#salonConsulta");
+    const fechaConsulta = obtenerElemento("#fechaConsulta");
+    const btnBuscarCodigo = obtenerElemento("#btnBuscarCodigo");
+    const estadoConsultaCodigo = obtenerElemento("#estadoConsultaCodigo");
+    const resultadoCodigoEvento = obtenerElemento("#resultadoCodigoEvento");
 
     let fiestaActual = null;
     let invitadosActuales = [];
@@ -284,6 +331,130 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Lista Admin";
       ocultarEstado(dashboardEstado);
       if (limpiarCodigo) codigoFiesta.value = "";
       window.setTimeout(() => codigoFiesta.focus(), 50);
+    }
+
+    function abrirConsultaCodigo() {
+      modalConsultaCodigo.classList.remove("hidden");
+      resultadoCodigoEvento.innerHTML = "";
+      resultadoCodigoEvento.classList.add("hidden");
+      ocultarEstado(estadoConsultaCodigo);
+      window.setTimeout(() => salonConsulta.focus(), 50);
+    }
+
+    function cerrarConsultaCodigo() {
+      modalConsultaCodigo.classList.add("hidden");
+      resultadoCodigoEvento.innerHTML = "";
+      resultadoCodigoEvento.classList.add("hidden");
+      ocultarEstado(estadoConsultaCodigo);
+    }
+
+    function renderizarCodigosEventos(eventos) {
+      resultadoCodigoEvento.innerHTML = "";
+
+      if (!eventos.length) {
+        resultadoCodigoEvento.classList.add("hidden");
+        mostrarEstado(
+          estadoConsultaCodigo,
+          "No se encontró ningún código con ese salón y fecha.",
+          "error"
+        );
+        return;
+      }
+
+      ocultarEstado(estadoConsultaCodigo);
+
+      for (const evento of eventos) {
+        const fila = document.createElement("div");
+        fila.className = "guest-row";
+
+        const avatar = document.createElement("div");
+        avatar.className = "guest-avatar";
+        avatar.textContent = limpiarTexto(evento.nombre_completo).slice(0, 1).toUpperCase() || "?";
+
+        const info = document.createElement("div");
+        info.className = "guest-info";
+
+        const nombre = document.createElement("strong");
+        nombre.textContent = evento.nombre_completo || "Sin nombre";
+
+        const meta = document.createElement("p");
+        meta.textContent = `${evento.nombre_salon || "Sin salón"} · ${evento.fecha_evento || "Sin fecha"}`;
+
+        info.append(nombre, meta);
+
+        const actions = document.createElement("div");
+        actions.className = "guest-actions";
+
+        const codigo = document.createElement("span");
+        codigo.className = "mesa-badge";
+        codigo.textContent = evento.codigo || "-";
+
+        const botonCopiar = document.createElement("button");
+        botonCopiar.type = "button";
+        botonCopiar.className = "small-button";
+        botonCopiar.textContent = "Copiar";
+        botonCopiar.dataset.codigo = evento.codigo || "";
+
+        actions.append(codigo, botonCopiar);
+        fila.append(avatar, info, actions);
+        resultadoCodigoEvento.append(fila);
+      }
+
+      resultadoCodigoEvento.classList.remove("hidden");
+    }
+
+    async function consultarCodigoEvento() {
+      const salon = limpiarTexto(salonConsulta.value);
+      const fecha = limpiarTexto(fechaConsulta.value);
+
+      if (!salon) {
+        mostrarEstado(estadoConsultaCodigo, "Escribe el nombre del salón.", "error");
+        salonConsulta.focus();
+        return;
+      }
+
+      if (!fecha) {
+        mostrarEstado(estadoConsultaCodigo, "Selecciona la fecha del evento.", "error");
+        fechaConsulta.focus();
+        return;
+      }
+
+      btnBuscarCodigo.disabled = true;
+      btnBuscarCodigo.textContent = "Buscando...";
+      resultadoCodigoEvento.classList.add("hidden");
+      mostrarEstado(estadoConsultaCodigo, "Buscando código de fiesta...", "info");
+
+      try {
+        const response = await fetch(`/api/codigos?salon=${encodeURIComponent(salon)}&fecha=${encodeURIComponent(fecha)}`);
+        const data = await leerJson(response);
+
+        if (!response.ok || !data.ok) {
+          throw new Error(data.message || "No se pudo consultar el código.");
+        }
+
+        renderizarCodigosEventos(Array.isArray(data.eventos) ? data.eventos : []);
+      } catch (error) {
+        resultadoCodigoEvento.classList.add("hidden");
+        mostrarEstado(estadoConsultaCodigo, mensajeDeError(error), "error");
+      } finally {
+        btnBuscarCodigo.disabled = false;
+        btnBuscarCodigo.textContent = "Buscar código";
+      }
+    }
+
+    async function copiarCodigoEvento(codigo, boton) {
+      if (!codigo) return;
+
+      try {
+        await navigator.clipboard.writeText(codigo);
+        boton.textContent = "Copiado";
+      } catch {
+        boton.textContent = "Copia manual";
+      }
+
+      setTimeout(() => {
+        boton.textContent = "Copiar";
+      }, 1400);
     }
 
     async function consultarLista() {
@@ -634,5 +805,28 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Lista Admin";
     adminPin.addEventListener("keydown", manejarEnterLogin);
     buscador.addEventListener("input", renderizarLista);
     btnExportar.addEventListener("click", exportarCsv);
+
+    btnAbrirConsultaCodigo.addEventListener("click", abrirConsultaCodigo);
+    btnCerrarConsultaCodigo.addEventListener("click", cerrarConsultaCodigo);
+
+    modalConsultaCodigo.addEventListener("click", (event) => {
+      if (event.target === modalConsultaCodigo) cerrarConsultaCodigo();
+    });
+
+    btnBuscarCodigo.addEventListener("click", consultarCodigoEvento);
+
+    salonConsulta.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") consultarCodigoEvento();
+    });
+
+    fechaConsulta.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") consultarCodigoEvento();
+    });
+
+    resultadoCodigoEvento.addEventListener("click", (event) => {
+      const boton = event.target.closest("button[data-codigo]");
+      if (!boton) return;
+      copiarCodigoEvento(boton.dataset.codigo, boton);
+    });
   </script>
 </BaseLayout>
