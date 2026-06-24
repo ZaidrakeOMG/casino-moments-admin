@@ -92,7 +92,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Lista Admin";
     </section>
 
     <section id="modalConsultaCodigo" class="access-modal hidden" aria-live="polite">
-      <article class="access-modal-card consulta-codigo-card">
+      <article class="access-modal-card">
         <div class="access-copy">
           <span class="luxury-line"></span>
           <h2>Consultar código</h2>
@@ -120,7 +120,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Lista Admin";
         </div>
 
         <section id="estadoConsultaCodigo" class="state hidden"></section>
-        <section id="resultadoCodigoEvento" class="list-container consulta-resultados hidden"></section>
+        <section id="resultadoCodigoEvento" class="list-container hidden"></section>
       </article>
     </section>
 
@@ -152,13 +152,28 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Lista Admin";
   </main>
 
   <style is:global>
-    /* Solo afecta el cuadro de Consultar código. No toca el modal del QR. */
+    /* Consulta de código: versión ligera para Android / equipos lentos */
+    body.consulta-codigo-open .ambient,
+    body.consulta-codigo-open .visual-glow,
+    body.consulta-codigo-open .scanner-card::before,
+    body.consulta-codigo-open .scanner-card::after {
+      display: none !important;
+      animation: none !important;
+      transition: none !important;
+    }
+
     #modalConsultaCodigo,
     #modalConsultaCodigo *,
+    #modalConsultaCodigo *::before,
+    #modalConsultaCodigo *::after,
     #modalConsultaCodigo::before,
     #modalConsultaCodigo::after {
       animation: none !important;
       transition: none !important;
+      transform: none !important;
+      filter: none !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
       scroll-behavior: auto !important;
     }
 
@@ -168,105 +183,147 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Lista Admin";
 
     #modalConsultaCodigo:not(.hidden) {
       display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
       opacity: 1 !important;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
+      padding: 14px !important;
+      background: rgba(0, 0, 0, 0.92) !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
     }
 
-    #modalConsultaCodigo .access-modal-card,
-    #modalConsultaCodigo .consulta-codigo-card {
-      width: min(94vw, 640px);
-      max-width: 640px;
-      max-height: calc(100vh - 32px);
-      overflow-y: auto;
-      animation: none !important;
-      transition: none !important;
-      transform: none !important;
+    #modalConsultaCodigo .access-modal-card {
+      width: min(760px, 94vw) !important;
+      max-width: 760px !important;
+      max-height: 92dvh !important;
+      overflow-y: auto !important;
+      box-sizing: border-box !important;
+      background: #0b0b0b !important;
+      background-image: none !important;
+      border: 1px solid rgba(219, 184, 82, 0.55) !important;
+      box-shadow: none !important;
+      text-shadow: none !important;
+      will-change: auto !important;
+    }
+
+    #modalConsultaCodigo .access-modal-card::before,
+    #modalConsultaCodigo .access-modal-card::after,
+    #modalConsultaCodigo .access-copy::before,
+    #modalConsultaCodigo .access-copy::after,
+    #modalConsultaCodigo .luxury-line::before,
+    #modalConsultaCodigo .luxury-line::after {
+      content: none !important;
+      display: none !important;
     }
 
     #modalConsultaCodigo .luxury-line {
-      animation: none !important;
+      display: block !important;
+      width: 64px !important;
+      height: 1px !important;
+      margin: 0 auto 18px !important;
+      background: rgba(219, 184, 82, 0.65) !important;
+      box-shadow: none !important;
     }
 
-    #modalConsultaCodigo .login-form {
-      width: 100%;
+    #modalConsultaCodigo .login-form,
+    #modalConsultaCodigo .list-container {
+      width: 100% !important;
+      box-sizing: border-box !important;
+    }
+
+    #modalConsultaCodigo .list-container {
+      max-height: 38dvh !important;
+      overflow-y: auto !important;
+      padding-right: 4px !important;
     }
 
     #modalConsultaCodigo input,
-    #modalConsultaCodigo button {
-      width: 100%;
-      max-width: 100%;
-      box-sizing: border-box;
-    }
-
-    #modalConsultaCodigo .consulta-resultados {
-      width: 100%;
-      margin-top: 16px;
-      max-height: 42vh;
-      overflow-y: auto;
+    #modalConsultaCodigo button,
+    #modalConsultaCodigo .guest-row,
+    #modalConsultaCodigo .mesa-badge,
+    #modalConsultaCodigo .small-button {
+      box-shadow: none !important;
+      filter: none !important;
+      text-shadow: none !important;
+      will-change: auto !important;
     }
 
     #modalConsultaCodigo .guest-row {
-      width: 100%;
-      box-sizing: border-box;
+      width: 100% !important;
+      box-sizing: border-box !important;
     }
 
     #modalConsultaCodigo .guest-actions {
-      flex-wrap: wrap;
-      justify-content: flex-end;
+      flex-wrap: wrap !important;
+      gap: 8px !important;
     }
 
-    @media (max-width: 700px) {
+    @media (max-width: 720px) {
       #modalConsultaCodigo:not(.hidden) {
-        align-items: flex-start;
-        padding: 10px;
+        align-items: flex-start !important;
+        padding: 8px !important;
       }
 
-      #modalConsultaCodigo .access-modal-card,
-      #modalConsultaCodigo .consulta-codigo-card {
-        width: 100%;
-        max-width: 100%;
-        max-height: calc(100vh - 20px);
-        margin: 0;
+      #modalConsultaCodigo .access-modal-card {
+        width: 96vw !important;
+        max-height: 94dvh !important;
+        padding: 18px !important;
+        border-radius: 18px !important;
       }
 
       #modalConsultaCodigo .access-copy h2 {
-        font-size: clamp(1.6rem, 8vw, 2.4rem);
-        line-height: 1.05;
+        font-size: 1.45rem !important;
+        line-height: 1.15 !important;
+      }
+
+      #modalConsultaCodigo .access-copy p {
+        font-size: 0.95rem !important;
+      }
+
+      #modalConsultaCodigo .login-form {
+        gap: 12px !important;
+      }
+
+      #modalConsultaCodigo input,
+      #modalConsultaCodigo button {
+        width: 100% !important;
+        min-height: 44px !important;
+        font-size: 16px !important;
+        box-sizing: border-box !important;
       }
 
       #modalConsultaCodigo .guest-row {
-        display: grid;
-        grid-template-columns: auto 1fr;
-        gap: 10px;
-        align-items: start;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+      }
+
+      #modalConsultaCodigo .guest-info,
+      #modalConsultaCodigo .guest-actions {
+        width: 100% !important;
       }
 
       #modalConsultaCodigo .guest-actions {
-        grid-column: 1 / -1;
-        justify-content: stretch;
+        justify-content: flex-start !important;
       }
 
-      #modalConsultaCodigo .guest-actions .mesa-badge,
-      #modalConsultaCodigo .guest-actions .small-button {
-        width: 100%;
-        text-align: center;
+      #modalConsultaCodigo .mesa-badge,
+      #modalConsultaCodigo .small-button {
+        width: 100% !important;
+        text-align: center !important;
       }
     }
 
     @media (max-width: 420px) {
-      #modalConsultaCodigo:not(.hidden) {
-        padding: 8px;
+      #modalConsultaCodigo .access-modal-card {
+        width: 98vw !important;
+        padding: 14px !important;
+        border-radius: 14px !important;
       }
 
-      #modalConsultaCodigo .access-modal-card,
-      #modalConsultaCodigo .consulta-codigo-card {
-        max-height: calc(100vh - 16px);
-      }
-
-      #modalConsultaCodigo .consulta-resultados {
-        max-height: 36vh;
+      #modalConsultaCodigo .access-copy h2 {
+        font-size: 1.25rem !important;
       }
     }
   </style>
@@ -454,14 +511,15 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Lista Admin";
     }
 
     function abrirConsultaCodigo() {
+      document.body.classList.add("consulta-codigo-open");
       modalConsultaCodigo.classList.remove("hidden");
       resultadoCodigoEvento.innerHTML = "";
       resultadoCodigoEvento.classList.add("hidden");
       ocultarEstado(estadoConsultaCodigo);
-      window.setTimeout(() => salonConsulta.focus(), 50);
     }
 
     function cerrarConsultaCodigo() {
+      document.body.classList.remove("consulta-codigo-open");
       modalConsultaCodigo.classList.add("hidden");
       resultadoCodigoEvento.innerHTML = "";
       resultadoCodigoEvento.classList.add("hidden");

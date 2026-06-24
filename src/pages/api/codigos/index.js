@@ -1,3 +1,5 @@
+export const prerender = false;
+
 import { supabase } from "../../../lib/supabaseServer.js";
 
 function jsonResponse(data, status = 200) {
@@ -26,12 +28,12 @@ function convertirFecha(valor) {
 
   if (!fecha) return "";
 
-  // Si viene bien desde input type="date": 2026-07-24
+  // Formato normal de input type="date": 2026-07-24
   if (/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
     return fecha;
   }
 
-  // Si viene como 24/07/2026
+  // Por si alguien manda 24/07/2026
   const partes = fecha.split("/");
   if (partes.length === 3) {
     const dia = partes[0].padStart(2, "0");
@@ -80,15 +82,6 @@ export async function GET({ url }) {
 
   return jsonResponse({
     ok: true,
-    eventos,
-    debug: {
-      salon_buscado: salon,
-      salon_normalizado: salonBuscado,
-      fecha_recibida: fechaOriginal,
-      fecha_convertida: fecha,
-      registros_por_fecha: Array.isArray(data) ? data.length : 0,
-      registros_finales: eventos.length,
-      registros_fecha: data
-    }
+    eventos
   });
 }

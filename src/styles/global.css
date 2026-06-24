@@ -1162,4 +1162,74 @@ input:focus {
   .scanner-modal .qr-reader {
     min-height: 260px;
   }
+  /* Consulta de código ligera: sin animaciones ni efectos pesados */
+#modalConsultaCodigo,
+#modalConsultaCodigo *,
+#modalConsultaCodigo::before,
+#modalConsultaCodigo::after {
+  animation: none !important;
+  transition: none !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+
+#modalConsultaCodigo {
+  background: rgba(0, 0, 0, 0.92) !important;
+}
+
+#modalConsultaCodigo .access-modal-card {
+  transform: none !important;
+  backdrop-filter: none !important;
+  filter: none !important;
+  box-shadow: none !important;
+  max-width: 760px;
+  width: calc(100% - 24px);
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+}
+
+#modalConsultaCodigo.hidden {
+  display: none !important;
+}
+
+#modalConsultaCodigo:not(.hidden) {
+  display: flex !important;
+  opacity: 1 !important;
+}
+
+#modalConsultaCodigo .luxury-line {
+  animation: none !important;
+}
+
+#modalConsultaCodigo .guest-row {
+  box-shadow: none !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+}
+
+@media (max-width: 640px) {
+  #modalConsultaCodigo .access-modal-card {
+    width: calc(100% - 16px);
+    padding: 20px 14px;
+    border-radius: 18px;
+  }
+
+  #modalConsultaCodigo h2 {
+    font-size: 32px;
+    line-height: 1.05;
+  }
+
+  #modalConsultaCodigo .guest-row {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 12px;
+  }
+
+  #modalConsultaCodigo .guest-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+}
 }
