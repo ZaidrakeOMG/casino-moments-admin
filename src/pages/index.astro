@@ -92,7 +92,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Lista Admin";
     </section>
 
     <section id="modalConsultaCodigo" class="access-modal hidden" aria-live="polite">
-      <article class="access-modal-card">
+      <article class="access-modal-card consulta-codigo-card">
         <div class="access-copy">
           <span class="luxury-line"></span>
           <h2>Consultar código</h2>
@@ -120,7 +120,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Lista Admin";
         </div>
 
         <section id="estadoConsultaCodigo" class="state hidden"></section>
-        <section id="resultadoCodigoEvento" class="list-container hidden"></section>
+        <section id="resultadoCodigoEvento" class="list-container consulta-resultados hidden"></section>
       </article>
     </section>
 
@@ -150,6 +150,126 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Lista Admin";
       </article>
     </section>
   </main>
+
+  <style is:global>
+    /* Solo afecta el cuadro de Consultar código. No toca el modal del QR. */
+    #modalConsultaCodigo,
+    #modalConsultaCodigo *,
+    #modalConsultaCodigo::before,
+    #modalConsultaCodigo::after {
+      animation: none !important;
+      transition: none !important;
+      scroll-behavior: auto !important;
+    }
+
+    #modalConsultaCodigo.hidden {
+      display: none !important;
+    }
+
+    #modalConsultaCodigo:not(.hidden) {
+      display: flex !important;
+      opacity: 1 !important;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    #modalConsultaCodigo .access-modal-card,
+    #modalConsultaCodigo .consulta-codigo-card {
+      width: min(94vw, 640px);
+      max-width: 640px;
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
+      animation: none !important;
+      transition: none !important;
+      transform: none !important;
+    }
+
+    #modalConsultaCodigo .luxury-line {
+      animation: none !important;
+    }
+
+    #modalConsultaCodigo .login-form {
+      width: 100%;
+    }
+
+    #modalConsultaCodigo input,
+    #modalConsultaCodigo button {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    #modalConsultaCodigo .consulta-resultados {
+      width: 100%;
+      margin-top: 16px;
+      max-height: 42vh;
+      overflow-y: auto;
+    }
+
+    #modalConsultaCodigo .guest-row {
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    #modalConsultaCodigo .guest-actions {
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    @media (max-width: 700px) {
+      #modalConsultaCodigo:not(.hidden) {
+        align-items: flex-start;
+        padding: 10px;
+      }
+
+      #modalConsultaCodigo .access-modal-card,
+      #modalConsultaCodigo .consulta-codigo-card {
+        width: 100%;
+        max-width: 100%;
+        max-height: calc(100vh - 20px);
+        margin: 0;
+      }
+
+      #modalConsultaCodigo .access-copy h2 {
+        font-size: clamp(1.6rem, 8vw, 2.4rem);
+        line-height: 1.05;
+      }
+
+      #modalConsultaCodigo .guest-row {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 10px;
+        align-items: start;
+      }
+
+      #modalConsultaCodigo .guest-actions {
+        grid-column: 1 / -1;
+        justify-content: stretch;
+      }
+
+      #modalConsultaCodigo .guest-actions .mesa-badge,
+      #modalConsultaCodigo .guest-actions .small-button {
+        width: 100%;
+        text-align: center;
+      }
+    }
+
+    @media (max-width: 420px) {
+      #modalConsultaCodigo:not(.hidden) {
+        padding: 8px;
+      }
+
+      #modalConsultaCodigo .access-modal-card,
+      #modalConsultaCodigo .consulta-codigo-card {
+        max-height: calc(100vh - 16px);
+      }
+
+      #modalConsultaCodigo .consulta-resultados {
+        max-height: 36vh;
+      }
+    }
+  </style>
 
   <script>
     // @ts-nocheck
