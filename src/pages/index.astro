@@ -378,8 +378,23 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Lista Admin";
     let escaneoBloqueado = false;
     let Html5QrcodeClass = null;
 
-    const pinGuardado = sessionStorage.getItem("casino_admin_pin");
-    if (pinGuardado) adminPin.value = pinGuardado;
+    const ADMIN_PIN_STORAGE_KEY = "casino_admin_pin";
+    const navigationEntry = performance.getEntriesByType?.("navigation")?.[0];
+    const paginaRecargada = navigationEntry?.type === "reload";
+
+    // El PIN se conserva mientras no recargues/cierres la pestaña.
+    // Al recargar, se borra para que vuelva a pedir contraseña.
+    if (paginaRecargada) {
+      sessionStorage.removeItem(ADMIN_PIN_STORAGE_KEY);
+      adminPin.value = "";
+    } else {
+      const pinGuardado = sessionStorage.getItem(ADMIN_PIN_STORAGE_KEY);
+      if (pinGuardado) adminPin.value = pinGuardado;
+    }
+
+    window.addEventListener("pagehide", () => {
+      sessionStorage.removeItem(ADMIN_PIN_STORAGE_KEY);
+    });
 
     function mensajeDeError(error) {
       return error instanceof Error ? error.message : "Ocurrió un error inesperado.";
@@ -506,7 +521,12 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Lista Admin";
       loginView.classList.remove("hidden");
       document.body.classList.remove("dashboard-active");
       ocultarEstado(dashboardEstado);
+
       if (limpiarCodigo) codigoFiesta.value = "";
+
+      const pinGuardado = sessionStorage.getItem(ADMIN_PIN_STORAGE_KEY);
+      if (pinGuardado) adminPin.value = pinGuardado;
+
       window.setTimeout(() => codigoFiesta.focus(), 50);
     }
 
@@ -651,7 +671,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Lista Admin";
         return;
       }
 
-      sessionStorage.setItem("casino_admin_pin", pin);
+      sessionStorage.setItem(ADMIN_PIN_STORAGE_KEY, pin);
       btnConsultar.disabled = true;
       btnConsultar.textContent = "Validando acceso...";
       mostrarEstado(estado, "Buscando lista de invitados...", "info");
@@ -948,8 +968,8 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Lista Admin";
 
     async function salir() {
       await detenerScanner();
-      sessionStorage.removeItem("casino_admin_pin");
-      adminPin.value = "";
+
+      // No borrar el PIN aquí: debe conservarse hasta recargar/cerrar la pestaña.
       codigoFiesta.value = "";
       fiestaActual = null;
       invitadosActuales = [];
