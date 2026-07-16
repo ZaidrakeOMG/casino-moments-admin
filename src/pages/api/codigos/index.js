@@ -15,14 +15,6 @@ function limpiarTexto(valor) {
   return String(valor || "").trim();
 }
 
-function normalizarTexto(valor) {
-  return limpiarTexto(valor)
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, " ");
-}
-
 function convertirFecha(valor) {
   const fecha = limpiarTexto(valor);
 
@@ -33,8 +25,9 @@ function convertirFecha(valor) {
     return fecha;
   }
 
-  // Por si alguien manda 24/07/2026
+  // También acepta 24/07/2026.
   const partes = fecha.split("/");
+
   if (partes.length === 3) {
     const dia = partes[0].padStart(2, "0");
     const mes = partes[1].padStart(2, "0");
@@ -49,14 +42,13 @@ function convertirFecha(valor) {
 }
 
 export async function GET({ url }) {
-  const salon = limpiarTexto(url.searchParams.get("salon"));
   const fechaOriginal = limpiarTexto(url.searchParams.get("fecha"));
   const fecha = convertirFecha(fechaOriginal);
 
-  if (!salon || !fecha) {
+  if (!fecha) {
     return jsonResponse({
       ok: false,
-      message: "Escribe el nombre del salón y la fecha del evento."
+      message: "Selecciona la fecha del evento."
     }, 400);
   }
 
@@ -67,21 +59,16 @@ export async function GET({ url }) {
     .order("id", { ascending: false });
 
   if (error) {
+    console.error("Error consultando códigos por fecha:", error);
+
     return jsonResponse({
       ok: false,
       message: error.message
     }, 500);
   }
 
-  const salonBuscado = normalizarTexto(salon);
-
-  const eventos = (Array.isArray(data) ? data : []).filter((evento) => {
-    const salonDb = normalizarTexto(evento.nombre_salon);
-    return salonDb.includes(salonBuscado) || salonBuscado.includes(salonDb);
-  });
-
   return jsonResponse({
     ok: true,
-    eventos
+    eventos: Array.isArray(data) ? data : []
   });
 }

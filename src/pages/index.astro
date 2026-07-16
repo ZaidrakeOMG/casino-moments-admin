@@ -96,15 +96,10 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Lista Admin";
         <div class="access-copy">
           <span class="luxury-line"></span>
           <h2>Consultar código</h2>
-          <p>Busca el código de fiesta por nombre del salón y fecha del evento.</p>
+          <p>Busca el código de fiesta por fecha del evento.</p>
         </div>
 
         <div class="login-form">
-          <label>
-            <span>Nombre del salón</span>
-            <input id="salonConsulta" type="text" placeholder="Ej. Casino Andares" autocomplete="off" />
-          </label>
-
           <label>
             <span>Fecha del evento</span>
             <input id="fechaConsulta" type="date" />
@@ -365,7 +360,6 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Lista Admin";
     const modalConsultaCodigo = obtenerElemento("#modalConsultaCodigo");
     const btnAbrirConsultaCodigo = obtenerElemento("#btnAbrirConsultaCodigo");
     const btnCerrarConsultaCodigo = obtenerElemento("#btnCerrarConsultaCodigo");
-    const salonConsulta = obtenerElemento("#salonConsulta");
     const fechaConsulta = obtenerElemento("#fechaConsulta");
     const btnBuscarCodigo = obtenerElemento("#btnBuscarCodigo");
     const estadoConsultaCodigo = obtenerElemento("#estadoConsultaCodigo");
@@ -553,7 +547,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Lista Admin";
         resultadoCodigoEvento.classList.add("hidden");
         mostrarEstado(
           estadoConsultaCodigo,
-          "No se encontró ningún código con ese salón y fecha.",
+          "No se encontró ningún código para esa fecha.",
           "error"
         );
         return;
@@ -602,14 +596,7 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Lista Admin";
     }
 
     async function consultarCodigoEvento() {
-      const salon = limpiarTexto(salonConsulta.value);
       const fecha = limpiarTexto(fechaConsulta.value);
-
-      if (!salon) {
-        mostrarEstado(estadoConsultaCodigo, "Escribe el nombre del salón.", "error");
-        salonConsulta.focus();
-        return;
-      }
 
       if (!fecha) {
         mostrarEstado(estadoConsultaCodigo, "Selecciona la fecha del evento.", "error");
@@ -620,10 +607,10 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Lista Admin";
       btnBuscarCodigo.disabled = true;
       btnBuscarCodigo.textContent = "Buscando...";
       resultadoCodigoEvento.classList.add("hidden");
-      mostrarEstado(estadoConsultaCodigo, "Buscando código de fiesta...", "info");
+      mostrarEstado(estadoConsultaCodigo, "Buscando códigos de fiesta...", "info");
 
       try {
-        const response = await fetch(`/api/codigos?salon=${encodeURIComponent(salon)}&fecha=${encodeURIComponent(fecha)}`);
+        const response = await fetch(`/api/codigos?fecha=${encodeURIComponent(fecha)}`);
         const data = await leerJson(response);
 
         if (!response.ok || !data.ok) {
@@ -1012,10 +999,6 @@ const appName = import.meta.env.PUBLIC_APP_NAME || "Lista Admin";
     });
 
     btnBuscarCodigo.addEventListener("click", consultarCodigoEvento);
-
-    salonConsulta.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") consultarCodigoEvento();
-    });
 
     fechaConsulta.addEventListener("keydown", (event) => {
       if (event.key === "Enter") consultarCodigoEvento();
